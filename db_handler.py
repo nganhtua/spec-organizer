@@ -199,6 +199,30 @@ class db_handler:
 			self.attach_to_spec('tmp/~tmp.txt', spec_key, 'txt_file')
 			os.remove('tmp/~tmp.txt')
 
+	def batch_txt_spec(self, *spec_keys):
+		''' Convert multiple .doc/.docx files to .txt files '''
+		for spec in spec_keys:
+			self.spec_doc_to_txt(spec)
+
+	def open(self, key, field):
+		''' Open spec file of the key '''
+		con = sqlite3.connect(self.db)
+		cur = con.cursor()
+		cur.execute(f'SELECT name FROM pragma_table_info("spec_list") \
+					WHERE pk <> 0')
+		pri_keys = [i[0] for i in cur.fetchall()]
+		where_clause = ' AND '.join([f'{pri_key}=?' for pri_key in pri_keys])
+		sql_cmd = f'SELECT {field} FROM spec_list WHERE {where_clause}'
+		print(sql_cmd, key)
+		file = con.execute(sql_cmd, key).fetchall()
+		if len(file) == 0:
+			print(f'Key {key} doesn\'t exist.')
+		elif file[0][0] == None:
+			print(f'Key {key} exists but the file in {field} not found.')
+		else:
+			file = f'contents/{file[0][0]}'
+			os.startfile(os.path.abspath(file))
+	
 	def clean_database(self):
 		''' Remove all unused files. '''
 		pass
@@ -230,7 +254,7 @@ class db_handler:
 				
 		# Generate the diff between the texts
 		dmp_instance = dmp.diff_match_patch()
-		dmp_instance.Diff_Timeout = 5
+		dmp_instance.Diff_Timeout = 5.0
 		diff = dmp_instance.diff_main(text1, text2)
 		
 		# Perform cleanup operations on the diff
