@@ -314,3 +314,46 @@ class db_handler:
 			file1 = f'contents/{file1[0][0]}'
 			file2 = f'contents/{file2[0][0]}'
 			self.diff_gen(file1, file2, open_output=True)
+
+	def get_products(self):
+		''' Return a list of product names '''
+		con = sqlite3.connect(self.db)
+		cur = con.cursor()
+		sql_cmd = 'SELECT product_name FROM product_list'
+		sql_result = cur.execute(sql_cmd).fetchall()
+		return [i[0] for i in sql_result]
+
+	def product_codefname(self, product_name):
+		''' Return product code from product name '''
+		con = sqlite3.connect(self.db)
+		cur = con.cursor()
+		sql_cmd = 'SELECT code FROM product_list WHERE product_name=?'
+		sql_result = cur.execute(sql_cmd, (product_name,)).fetchone()
+		if sql_result is None:
+			return None
+		else:
+			return sql_result[0]
+
+	def get_specs(self, product_code):
+		''' Return the specs associated with product name '''
+		con = sqlite3.connect(self.db)
+		cur = con.cursor()
+		sql_cmd = f'SELECT spec_id, spec_type, issued_date \
+					FROM spec_list WHERE product_code=?'
+		sql_result = con.execute(sql_cmd, (product_code,)).fetchall()
+		if sql_result is None:
+			return None
+		r = []
+		for s in sql_result:
+			sql_cmd = 'SELECT type_of_spec FROM spec_type WHERE code=?'
+			spec_type = cur.execute(sql_cmd, (s[1],)).fetchone()[0]
+			r.append([s[0], spec_type, s[2]])
+		return r
+
+	def build_tree_data(self):
+		''' Prepare data to populate spec tree '''
+		products = self.get_products()
+		r = {}
+		for product in products:
+			r[product] = self.get_specs(self.product_codefname(product))
+		return r

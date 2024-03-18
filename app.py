@@ -1,14 +1,30 @@
 from db_handler import db_handler
+import sys
+from PyQt5.QtWidgets import (
+	QApplication, QDialog, QMainWindow, QMessageBox, QTreeWidgetItem
+)
+from ui.main_window import Ui_MainWindow
 
-db = db_handler('specs.db3')
+class Window(QMainWindow, Ui_MainWindow):
+	def __init__(self, parent=None):
+		super().__init__(parent)
+		self.setupUi(self)
 
-#db.attach_to_spec("Q:\\Q10. QC-2023\\Q11. THAM DINH TC-Thanh Ha\\1. THẨM ĐỊNH TIÊU CHUẨN-HƯNG YÊN\\Emflotra 10 mg\\1. Đăng ký mới\\5. Emflotra VBF-Gui NC&HY 22.06.23\\1. TCCS- ĐỀ CƯƠNG- BÁO CÁO\\1. Tiêu chuẩn Emflotra 10 mg.txt", 
-#	('EMFLOTRA10', '04-ĐS-173-23THY', 3), 'txt_file')
-db.compare_spec(('EMFLOTRA25', 'V1/23.12.22', 1), ('EMFLOTRA25', '06.03.24.V2', 1))
-# for i in [('EMFLOTRA10', 'V0/29.10.22', 1), 
-# 		  ('EMFLOTRA10', 'V1/23.12.22', 1), 
-# 		  ('EMFLOTRA10', '06.03.24.V2', 1), 
-# 		  ('EMFLOTRA25', 'V0/29.10.22', 1), 
-# 		  ('EMFLOTRA25', 'V1/23.12.22', 1), 
-# 		  ('EMFLOTRA25', '06.03.24.V2', 1)]:
-# 	db.spec_doc_to_txt(i)
+	def populate_tree(self, data):
+		items = []
+		for key, values in data.items():
+			item = QTreeWidgetItem([key])
+			for value in values:
+				child = QTreeWidgetItem(value)
+				item.addChild(child)
+			items.append(item)
+		self.treeWidget.clear()
+		self.treeWidget.insertTopLevelItems(0, items)
+
+if __name__ == "__main__":
+	app = QApplication(sys.argv)
+	win = Window()
+	data = db.build_tree_data()
+	win.populate_tree(data)
+	win.show()
+	sys.exit(app.exec())
